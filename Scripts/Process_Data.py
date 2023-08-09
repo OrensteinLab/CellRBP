@@ -5,21 +5,33 @@ Created on Sun Jul  2 16:17:43 2023
 @author: orifl
 """
 from Util_Functions import create_dir,string_to_bool
-from Data_Functions import get_FPKM, get_CHR_idx, get_RNA_annotation
+from Data_Functions import get_FPKM, get_CHR_idx, get_RNA_annotation,create_transcripts_func
 import pandas as pd
 
 import argparse
 parser = argparse.ArgumentParser('CellRBP')
 
-parser.add_argument('--input_data_path',    type=str,   default='',                                 help='Input data path. Example: ../Data/clip_data/AARS_K562.tsv')
-parser.add_argument('--output_data_dir',    type=str,   default="../Data/clip_data_processed",      help='Output data path. Default: ../Data/clip_data_processed')
-parser.add_argument('--is_prismnet',        type=str,   default='True',                             help='Is the input data in PrismNet format? [True,False]')
-parser.add_argument('--is_annotated',       type=str,   default='True',                             help='Is the input data in PrismNet format? [True,False]')
+#eCLIP
+parser.add_argument('--process_eclip',              type=str,       default='False',                            help='Process eCLIP data [True,False]. default: False')
+parser.add_argument('--input_data_path',            type=str,       default='',                                 help='Input data path. Default: \'\'. Example: ../Data/clip_data/AARS_K562.tsv')
+parser.add_argument('--output_data_dir',            type=str,       default="../Data/clip_data_processed",      help='Output data path. Default: ../Data/clip_data_processed')
+parser.add_argument('--is_prismnet',                type=str,       default='True',                             help='Is the input data in PrismNet format? [True,False]. default: True')
+parser.add_argument('--is_annotated',               type=str,       default='True',                             help='Is input data annotated? [True,False]. default: True')
+parser.add_argument('--train_frac',                 type=float,     default="0.7",                              help='Train set size [0-1]')
+parser.add_argument('--valid_frac',                 type=float,     default="0.15",                             help='Validation set size [0-1]')
+parser.add_argument('--test_frac',                  type=float,     default="0.15",                             help='Test set size [0-1]')
 
-parser.add_argument('--train_frac',         type=float, default="0.7",                              help='Train set size [0-1]')
-parser.add_argument('--valid_frac',         type=float, default="0.15",                             help='Validation set size [0-1]')
-parser.add_argument('--test_frac',          type=float, default="0.15",                             help='Test set size [0-1]')
+#Transcripts
+parser.add_argument('--create_transcripts_file',    type=str,       default='False',                            help='Create transcripts file? [True,False]. Default: False')
+parser.add_argument('--FASTA_path',                 type=str,       default='../Features/FASTA/gencode.v26.transcripts.fa',\
+                                                    help='Path to FASTA file. Default: ../Features/FASTA/gencode.v26.transcripts.fa')
+parser.add_argument('--GTF_path',                   type=str,       default='../Features/GTF/gencode.v26.annotation.gtf',\
+                                                    help='Path to FASTA file. Default: ../Features/FASTA/gencode.v26.annotation.gtf')  
+parser.add_argument('--transcripts_output_dir',     type=str,       default='../Features/',                      help='Path to FASTA file. Default: ../Features/')
 
+    # transcripts_dir = '../Features/FASTA/'
+    # GTF_path = '../Features/GTF/gencode.v26.annotation.gtf'
+    # FASTA_path = '../Features/FASTA/gencode.v26.transcripts.fa'
 args = parser.parse_args()
 
 input_data_path = args.input_data_path
@@ -30,6 +42,9 @@ is_annotated = string_to_bool(args.is_annotated)
 train_frac = args.train_frac
 valid_frac = args.valid_frac
 test_frac = args.test_frac
+
+create_transcripts_file = string_to_bool(args.create_transcripts_file)
+process_eclip = string_to_bool(args.process_eclip)
 
 #%%
 
@@ -129,30 +144,34 @@ def filt_shuffle_split (df_eclip,letters_pool,train_frac,valid_frac,test_frac,Pr
     
 #%%
 # --------------------- Functions caller ---------------------
-if input_data_path == '':
-    print('\nError: No input data path was inserted. Example: --input_data_path ../Data/clip_data/AARS_K562.tsv')
-else:
-    Protein = input_data_path.split('/')[-1].split('.')[0].split('_')[0]
-    Cell_Type = input_data_path.split('/')[-1].split('.')[0].split('_')[1]
+if create_transcripts_file:
+    create_transcripts_func(args.transcripts_output_dir,args.FASTA_path,args.GTF_path)
 
-    print('------ Processing data details ------\nInput data path: \t\t{}\nIs in PrismNet format: \t\t{}\nIs annotated: \t\t\t{}\nOutput data dir: \t\t{} \
-          \nProtein: \t\t\t{}\nCell type: \t\t\t{}\nTrain set fraction size: \t{}\nValidation set fraction size: \t{}'\
-          '\nTest set fraction size: \t{}\n'.format(input_data_path,is_prismnet,is_annotated,output_data_dir,Protein,Cell_Type,train_frac,valid_frac,test_frac)) 
-
-    df_eclip = create_df (input_data_path, is_prismnet)
+if process_eclip:
+    if input_data_path == '':
+        print('\nError: No input data path was inserted. Example: --input_data_path ../Data/clip_data/AARS_K562.tsv')
+    else:
+        Protein = input_data_path.split('/')[-1].split('.')[0].split('_')[0]
+        Cell_Type = input_data_path.split('/')[-1].split('.')[0].split('_')[1]
     
-    if Cell_Type == 'K562':
-        FPKM_path = '../Features/FPKM/K562/ENCFF429YLC.tsv'
-    if Cell_Type == 'HepG2':
-        FPKM_path = '../Features/FPKM/HepG2/ENCFF878MHG.tsv'
-    df_eclip_fpkm = add_FPKM (df_eclip, Cell_Type, FPKM_path)
-    df_eclip_fpkm_chr = add_chr_pos (df_eclip_fpkm)
+        print('------ Processing data details ------\nInput data path: \t\t{}\nIs in PrismNet format: \t\t{}\nIs annotated: \t\t\t{}\nOutput data dir: \t\t{} \
+              \nProtein: \t\t\t{}\nCell type: \t\t\t{}\nTrain set fraction size: \t{}\nValidation set fraction size: \t{}'\
+              '\nTest set fraction size: \t{}\n'.format(input_data_path,is_prismnet,is_annotated,output_data_dir,Protein,Cell_Type,train_frac,valid_frac,test_frac)) 
     
-    gtf_Path = '../Features/GTF/Homo_sapiens.GRCh38.89.gtf'
-    df_eclip_fpkm_chr_RNA_annotations = add_RNA_annotations (df_eclip_fpkm_chr,output_data_dir,Protein,Cell_Type,gtf_Path)
-    
-    letters_pool_to_filt = ['N','W','Y','R','M','K','Seq']
-    filt_shuffle_split (df_eclip_fpkm_chr_RNA_annotations,letters_pool_to_filt,train_frac,valid_frac,test_frac,Protein,Cell_Type,output_data_dir)
+        df_eclip = create_df (input_data_path, is_prismnet)
+        
+        if Cell_Type == 'K562':
+            FPKM_path = '../Features/FPKM/K562/ENCFF429YLC.tsv'
+        if Cell_Type == 'HepG2':
+            FPKM_path = '../Features/FPKM/HepG2/ENCFF878MHG.tsv'
+        df_eclip_fpkm = add_FPKM (df_eclip, Cell_Type, FPKM_path)
+        df_eclip_fpkm_chr = add_chr_pos (df_eclip_fpkm)
+        
+        gtf_Path = '../Features/GTF/Homo_sapiens.GRCh38.89.gtf'
+        df_eclip_fpkm_chr_RNA_annotations = add_RNA_annotations (df_eclip_fpkm_chr,output_data_dir,Protein,Cell_Type,gtf_Path)
+        
+        letters_pool_to_filt = ['N','W','Y','R','M','K','Seq']
+        filt_shuffle_split (df_eclip_fpkm_chr_RNA_annotations,letters_pool_to_filt,train_frac,valid_frac,test_frac,Protein,Cell_Type,output_data_dir)
 
 
 

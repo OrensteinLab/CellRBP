@@ -305,4 +305,79 @@ def get_RNA_annotation (df_eclip,GTF_path):
         df_eclip['chr_end'][i] = chr_end_str
     
     return df_eclip
+
+def create_transcripts_func(transcripts_dir,FASTA_path,GTF_path):
+    
+    print('--- Collecting transcripts information [This may take a while] ---')
+    # transcripts_dir = '../Features/'
+    # GTF_path = '../Features/GTF/gencode.v26.annotation.gtf'
+    # FASTA_path = '../Features/FASTA/gencode.v26.transcripts.fa'
+    
+    debug = False
+    # import GTF file
+    print('--- Reading and processing GTF file ---')
+    
+    column_names = ['chr','source','annotation','chr_start','chr_end','dc1','strand','dc2','additional_info']
+    df_gtf_gencode = pd.read_csv(GTF_path, delimiter='\t', names = column_names, skiprows= 5)
+    df_gtf_gencode = df_gtf_gencode[df_gtf_gencode['additional_info'].str.contains('ENST')].reset_index(drop=True) #Drop rows that don't contain gene ids
+    additional_info_cols = df_gtf_gencode['additional_info'].str.split('"',expand=True)
+    df_gtf_gencode['ENST'] = additional_info_cols[3].str.split('ENST',expand=True)[1].str.split('.',expand=True)[0].astype(int)
+    df_gtf_gencode = df_gtf_gencode.drop(columns=['source','dc1','dc2','additional_info'])
+    
+    #Creates a new dataframe 'df_Transcripts' containing: Transcript Name, Start line, end line, sequence columns and sequence length 
+    print('--- Reading and processing FASTA file ---')
+    df = pd.read_csv(FASTA_path, sep='/t', names=['Transcript_Name'], engine='python')
+    df_Transcripts = pd.DataFrame(columns = ['Transcript_Name','Line_Start','Line_End','Sequence','Seq_Length'])
+    df_Transcripts ['Transcript_Name'] = df.loc[df['Transcript_Name'].str.contains('>ENST')]['Transcript_Name'].str.split('|').str[0]
+    df_Transcripts['Line_Start'] = df_Transcripts.index                     #Add column - Index of transcript (in lines)
+    df_Transcripts = df_Transcripts.reset_index(drop=True)
+    
+    df_Transcripts['Line_End'][:-1] = df_Transcripts['Line_Start'][1:]
+    df_Transcripts['Line_End'][-1:] =  len(df)
+    
+    #
+    #Insert sequences from each transcript to its relevant place in the dataframe
+    print('--- Collecting transcript sequences and genome positions ---')
+    start = time.time()
+    for transcript_no in range(len(df_Transcripts)):
+        transcript = df[df_Transcripts['Line_Start'][transcript_no]+1:df_Transcripts['Line_End'][transcript_no]].stack().str.cat()
+        df_Transcripts.loc[transcript_no,'Sequence'] = transcript #[transcript_no] = transcript
+        df_Transcripts.loc[transcript_no,'Seq_Length'] = len(transcript)
+    
+        if transcript_no % 10000 == 0:
+            if transcript_no:
+                ETA(start,transcript_no/len(df_Transcripts))
+    
+    # df_Transcripts = df_Transcripts.reset_index(drop=True)
+    df_Transcripts['ENST'] = df_Transcripts['Transcript_Name'].str.split('ENST00000',expand=True)[1].str.split('.',expand=True)[0].astype(int)
+    
+    # Calculate length of seq by summing all exon lengths in transcript (for debugging)
+    if debug:
+        df_Transcripts['GTF_Seq_Length_(Debug)'] = ''
+        for transcript_no in range((1000)):
+            gtf_transcript_info = df_gtf_gencode.loc[df_gtf_gencode['ENST'] == df_Transcripts['ENST'][transcript_no]]
+            gtf_transcript_info = gtf_transcript_info.reset_index(drop=True)
+            total_exon_length = 0
+            for i in range(len(gtf_transcript_info)):
+                if gtf_transcript_info['annotation'][i] == 'exon':
+                    total_exon_length += gtf_transcript_info['chr_end'][i] + 1 - gtf_transcript_info['chr_start'][i]
+            
+            df_Transcripts['GTF_Seq_Length_(Debug)'][transcript_no] = total_exon_length
+        
+    # get exon chr info
+    print('--- Filtering Exons ---')
+    df_Transcripts['exon_chr_info'] = ''
+    start = time.time()
+    
+    for transcript_no in range(len(df_Transcripts)): #TEMP
+        gtf_transcript_info = df_gtf_gencode.loc[df_gtf_gencode['ENST'] == df_Transcripts['ENST'][transcript_no]]
+        df_Transcripts['exon_chr_info'][transcript_no] = gtf_transcript_info.loc[gtf_transcript_info['annotation']=='exon'].reset_index(drop=True)
+        
+        if transcript_no % 5000 == 0 and transcript_no!=0:
+            ETA(start,transcript_no/len(df_Transcripts))
+            
+    #dump into pickle file
+    with open(transcripts_dir+'df_transcripts.pkl', 'wb') as f:
+        pickle.dump(df_Transcripts, f)
+    print('transcripts information file was successfully created in: {}'.format(transcripts_dir+'df_transcripts.pkl'))
             
