@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import logomaker
 import os
 import time
+import sys
 
 
 length_of_seq=101
@@ -22,12 +23,26 @@ Length_of_nbs = 20
 
 #%% General functions
 
-def create_dir(path):
+def create_dir(path, silence=False):
     isExist = os.path.exists(path)
     if not isExist:
        os.makedirs(path)
-       print("New Directory Created in {}".format(path)) 
+       if ~silence:
+           print("New Directory Created in {}".format(path)) 
 
+def check_path(path):
+    isExist = os.path.exists(path)
+    if not isExist:
+        print("Invalid path: {}.\nExitting".format(path)) 
+        sys.exit()
+        
+def fix_path(path_args):
+    for i in range(len(path_args)):
+        if path_args[i]:
+            if '\\' in path_args[i]:
+                path_args[i] = path_args[i].replace('\\','/')
+    return path_args
+            
 def ETA(startTime,partDone,include_seconds = True):
     #Estimates the ETA of a function given the time the function has started and the completion ratio
     
@@ -206,12 +221,12 @@ def create_DNA_logo(PWM, Protein, Cell_Type, Title, path_plot, figsize=(16, 4), 
     if show_Title == True:
         IG_logo.ax.set_title(Title , loc='left', fontsize = 25)
 
-    create_dir(path_plot)
+    create_dir(path_plot,silence=True)
     
     if Cell_Type == '': #i.e. 2 cell types
-        plt.savefig(path_plot+'/{}.png'.format(Protein),bbox_inches='tight', dpi = 100)
+        plt.savefig(path_plot+'{}.png'.format(Protein),bbox_inches='tight', dpi = 100)
     else:
-        plt.savefig(path_plot+'/{}_{}.png'.format(Protein,Cell_Type),bbox_inches='tight', dpi = 100)
+        plt.savefig(path_plot+'{}_{}.png'.format(Protein,Cell_Type),bbox_inches='tight', dpi = 100)
     plt.show()
 
     return IG_logo  
@@ -240,12 +255,12 @@ def create_structure_logo(PWM, Protein, Cell_Type, Title, path_plot, figsize=(16
     IG_logo.ax.xaxis.set_tick_params('both')
     IG_logo.ax.set_xticklabels([])
 
-    create_dir(path_plot)
+    create_dir(path_plot,silence=True)
       
     if Cell_Type == '': #i.e. 2 cell types
-        plt.savefig(path_plot+'/{}.png'.format(Protein),bbox_inches='tight', dpi = 100)
+        plt.savefig(path_plot+'{}.png'.format(Protein),bbox_inches='tight', dpi = 100)
     else:
-        plt.savefig(path_plot+'/{}_{}.png'.format(Protein,Cell_Type),bbox_inches='tight', dpi = 100)
+        plt.savefig(path_plot+'{}_{}.png'.format(Protein,Cell_Type),bbox_inches='tight', dpi = 100)
     plt.show()
 
     return IG_logo  
@@ -271,8 +286,8 @@ def create_SHAPE_plot(SHAPE_data, Protein, Cell_Type, path_plot, figsize=(16, 3)
         ax.axhline(y=0.233,linestyle='--',color='gray')
     ax.set_xlim(-0.5, len(SHAPE_data)-0.5)
 
-    create_dir(path_plot)
-    plt.savefig(path_plot+'/{}_{}.png'.format(Protein,Cell_Type),bbox_inches='tight', dpi=100)
+    create_dir(path_plot,silence=True)
+    plt.savefig(path_plot+'{}_{}.png'.format(Protein,Cell_Type),bbox_inches='tight', dpi=100)
     plt.show()
     
 def get_gradients(model, sample_inputs, target_range=None, jacobian=False):

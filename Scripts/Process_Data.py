@@ -50,7 +50,7 @@ process_eclip = string_to_bool(args.process_eclip)
 
 # --------------------- Read data and create dataframe --------------------- 
 
-def create_df (data_path, is_prismnet):
+def create_df (data_path,letters_pool, is_prismnet):
     if is_prismnet:
         names = ['Unk1','ENST_Indices','Sequence','SHAPE','Unk2']
         if is_annotated:
@@ -68,6 +68,14 @@ def create_df (data_path, is_prismnet):
             if is_annotated:
                 names.append('eCLIP_Score')
             df_eclip = pd.read_csv(data_path,delimiter='\t',names=names)
+    
+    #Filter - delete rows containing illegal chars or strings, such as: ['N','W','Y','R','M','K','Seq']
+    raw_len = len(df_eclip)
+    for letter in letters_pool:
+        df_eclip = df_eclip[~df_eclip['Sequence'].str.contains(letter)]
+    print('{} {}: {} Corrupted row(s) were deleted'.format(Protein,Cell_Type,raw_len-len(df_eclip)))
+    df_eclip = df_eclip.reset_index(drop=True)
+
 
     return df_eclip
 
@@ -109,16 +117,10 @@ def add_RNA_annotations (df_eclip_Chr,output_data_dir,Protein,Cell_Type,gtf_Path
 #%%
 # --------------------- Filter, shuffle, split ---------------------
 
-def filt_shuffle_split (df_eclip,letters_pool,train_frac,valid_frac,test_frac,Protein,Cell_Type,output_data_dir):
+def shuffle_split (df_eclip,train_frac,valid_frac,test_frac,Protein,Cell_Type,output_data_dir):
 
     print('------ Filtering, shuffling and splitting {} {} ------'.format(Protein,Cell_Type))
     
-    #Delete rows containing illegal strings ['N','W','Y','R','M','K','Seq']
-    raw_len = len(df_eclip)
-    for letter in letters_pool:
-        df_eclip = df_eclip[~df_eclip['Sequence'].str.contains(letter)]
-    print('{} {}: {} Row(s) were deleted'.format(Protein,Cell_Type,raw_len-len(df_eclip)))
-    df_eclip = df_eclip.reset_index(drop=True)
     
     #Divide into Training, Validation and Test
     df_eclip_shuff = df_eclip.sample(frac=1, random_state=42)
@@ -156,9 +158,13 @@ if process_eclip:
     
         print('------ Processing data details ------\nInput data path: \t\t{}\nIs in PrismNet format: \t\t{}\nIs annotated: \t\t\t{}\nOutput data dir: \t\t{} \
               \nProtein: \t\t\t{}\nCell type: \t\t\t{}\nTrain set fraction size: \t{}\nValidation set fraction size: \t{}'\
-              '\nTest set fraction size: \t{}\n'.format(input_data_path,is_prismnet,is_annotated,output_data_dir,Protein,Cell_Type,train_frac,valid_frac,test_frac)) 
-    
-        df_eclip = create_df (input_data_path, is_prismnet)
+              '\nTest set fraction size: \t{}'.format(input_data_path,is_prismnet,is_annotated,output_data_dir,Protein,Cell_Type,train_frac,valid_frac,test_frac)) 
+
+        letters_pool_to_filt = ['N','W','Y','R','M','K','Seq']
+        df_eclip = create_df (input_data_path,letters_pool_to_filt, is_prismnet)
+        print('Number of samples: \t\t{}\n'.format(len(df_eclip)))
+        if df_eclip['ENST_Indices'][0] == 'Name':
+            df_eclip = df_eclip[1:].reset_index(drop=True)
         
         if Cell_Type == 'K562':
             FPKM_path = '../Features/FPKM/K562/ENCFF429YLC.tsv'
@@ -170,8 +176,7 @@ if process_eclip:
         gtf_Path = '../Features/GTF/Homo_sapiens.GRCh38.89.gtf'
         df_eclip_fpkm_chr_RNA_annotations = add_RNA_annotations (df_eclip_fpkm_chr,output_data_dir,Protein,Cell_Type,gtf_Path)
         
-        letters_pool_to_filt = ['N','W','Y','R','M','K','Seq']
-        filt_shuffle_split (df_eclip_fpkm_chr_RNA_annotations,letters_pool_to_filt,train_frac,valid_frac,test_frac,Protein,Cell_Type,output_data_dir)
+        shuffle_split (df_eclip_fpkm_chr_RNA_annotations,train_frac,valid_frac,test_frac,Protein,Cell_Type,output_data_dir)
 
 
 
