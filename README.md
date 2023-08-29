@@ -18,7 +18,7 @@ Install packages and clone repository :
 pip install -r requirements.txt
 
 cd CellRBP
-git clone https://github.com/kuixu/PrismNet.git
+git clone https://github.com/OrensteinLab/CellRBP.git
 tar zxvf ./Features/df_transcripts.pkl.gz
 tar zxvf ./Features/GTF/Homo_sapiens.GRCh38.89.gtf.gz
 ```
