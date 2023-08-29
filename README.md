@@ -25,21 +25,53 @@ tar zxvf ./Features/GTF/Homo_sapiens.GRCh38.89.gtf.gz
 
 ## Preprocess eCLIP data 
 
-add RNA abundance,RNA region types and predict missing icSHAPE values
+Add RNA abundance, RNA region types and predict missing icSHAPE values
+(in this example: preprocess 2 eCLIIP datasets - AGGF1-HepG2, AGGF1-K562)
 ```
-cd Scripts
-python Process_Data.py --process_eclip True --input_data_path ../Data/clip_data/RBFOX2_HepG2.tsv
-```
-
-# Training and evaluation
-```
-python Model_Functions.py --TRAIN True --input_data_dir ../Data/clip_data_processed/RBFOX2_HepG2/
-python Model_Functions.py --PREDICT True --predict_data_path ../Data/clip_data_processed/RBFOX2_HepG2/Test_15.tsv --predict_model_dir ../Models/CellRBP/RBFOX2/HepG2/
-python Model_Functions.py --EVALUATE True --input_data_dir ../Data/clip_data_processed/RBFOX2_HepG2/ --predict_model_dir ../Models/CellRBP/RBFOX2/HepG2/
+python Scripts/Process_Data.py --process_eclip True --input_data_path Data/clip_data/AGGF1_HepG2.tsv
+python Scripts/Process_Data.py --process_eclip True --input_data_path Data/clip_data/AGGF1_K562.tsv
 ```
 
+## Training, prediction and and evaluation
 
+### Cross-validation
+Train a protein and cell type specific model based on processed eCLIP data (in this example: AGGF1-HepG2)
+```
+python Scripts/Model_Functions.py --TRAIN True --input_data_dir Data/clip_data_processed/AGGF1_HepG2/
+```
 
+Predict binding scores for the eCLIP test set 
+```
+python Scripts/Model_Functions.py --PREDICT True --predict_data_path Data/clip_data_processed/AGGF1_HepG2/Test_15.tsv --predict_model_dir Models/CellRBP/AGGF1/HepG2/
+```
 
+Evaluate the model performance given an annotated eCLIP test set
+```
+python Scripts/Model_Functions.py --EVALUATE True --predict_data_path Data/clip_data_processed/AGGF1_HepG2/Test_15.tsv --predict_model_dir Models/CellRBP/AGGF1/HepG2/
+```
+
+### Across cell types
+Predict binding scores of a selected protein, given a model trained on the same protein but of a different cell type 
+(in this example: use a model trained on AGGF1-HepG2 to predict binding scores of samples in AGGF1-K562)
+
+```
+python Scripts/Model_Functions.py --PREDICT True --predict_data_path Data/clip_data_processed/AGGF1_K562/Test_15.tsv --predict_model_dir Models/CellRBP/AGGF1/HepG2/
+```
+
+Evaluate the model performance across cell types 
+(in this example: use a model trained on AGGF1-HepG2 to evaluate its prediction performance on samples in AGGF1-K562)
+
+```
+python Scripts/Model_Functions.py --EVALUATE True --predict_data_path Data/clip_data_processed/AGGF1_K562/Test_15.tsv --predict_model_dir Models/CellRBP/AGGF1/HepG2/
+```
+
+## Interpretation
+
+###Local sequence and structure interpretation 
+Retrieve sequence and structure local attribution scores for given samples
+(in this example: get local interpretation for AGGF1-HepG2)
+```
+python Scripts/Interpretation_Functions.py --LOCAL_INTERPRETATION true --input_data_path Data\clip_data_processed\AGGF1_HepG2\all.tsv --model_data_dir Models\CellRBP\AGGF1\HepG2\
+```
 
 

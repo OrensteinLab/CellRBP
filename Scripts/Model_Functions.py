@@ -25,12 +25,12 @@ parser.add_argument('--EVALUATE',                   type=str,   default='False',
 parser.add_argument('--PREDICT',                    type=str,   default='False',      help='Predict using an existing model [True,False]. Default: False')
 
 
-parser.add_argument('--input_data_dir',             type=str,                         help='Input data directory path. Example: ../Data/clip_data_processed/RBFOX2_HepG2/')
-parser.add_argument('--predict_data_path',          type=str,                         help='Path of the data to be predicted. Example: ../Data/clip_data_processed/RBFOX2_HepG2/Test_15.tsv')
-parser.add_argument('--output_data_dir',            type=str,   default="../Data/clip_data_processed/",  help='Output Data directory path. Example: ../Data/clip_data_processed/')
-parser.add_argument('--output_model_dir',           type=str,   default="../Models/",                    help='Model\'s output directory path. Default: ../Models/')
+parser.add_argument('--input_data_dir',             type=str,                         help='Input data directory path. Example: Data/clip_data_processed/RBFOX2_HepG2/')
+parser.add_argument('--predict_data_path',          type=str,                         help='Path of the data to be predicted. Example: Data/clip_data_processed/RBFOX2_HepG2/Test_15.tsv')
+parser.add_argument('--output_data_dir',            type=str,   default="Data/clip_data_processed/",  help='Output Data directory path. Example: Data/clip_data_processed/')
+parser.add_argument('--output_model_dir',           type=str,   default="Models/",                    help='Model\'s output directory path. Default: Models/')
 parser.add_argument('--output_model_type',          type=str,   default="CellRBP",                       help='Output Model\'s name. Default: CellRBP')
-parser.add_argument('--icSHAPE_model_dir',          type=str,   default='../Models/icSHAPE/',            help='icSHAPE model\'s directory path. Default: ../Models/icSHAPE/') 
+parser.add_argument('--icSHAPE_model_dir',          type=str,   default='Models/icSHAPE/',            help='icSHAPE model\'s directory path. Default: Models/icSHAPE/') 
  
 parser.add_argument('--train_set_file_name',        type=str,   default="Train_70.tsv",         help='Input train set file name for training. Default: Train_70.tsv')
 parser.add_argument('--valid_set_file_name',        type=str,   default="Validation_15.tsv",    help='Input validation set file name for training. Default: Validation_15.tsv')
@@ -53,20 +53,18 @@ parser.add_argument('--LOSS',                       type=str,   default="mse",  
 parser.add_argument('--FINAL_ACTIVATION_FUNCTION',  type=str,   default="linear",               help='Final layer\'s activation function [linear, sigmoid]. Default: linear')
 parser.add_argument('--VERBOSE',                    type=int,   default ='0',                   help='Model verbose [0,1,2]. Default: 0')
 
-parser.add_argument('--predict_model_dir',          type=str,                                   help='Directory path of the model to predict with. Example: ../Models/CellRBP/AARS/K562/')
+parser.add_argument('--predict_model_dir',          type=str,                                   help='Directory path of the model to predict with. Example: Models/CellRBP/AARS/K562/')
 
 args = parser.parse_args()
 
-# [TRAIN,EVALUATE,predict_model_dir,data_dir,output_model_dir,ModelType,icSHAPE_model_dir,train_fn,valid_fn,test_fn] = \
-#     [args.train,args.evaluate,args.predict_model_dir,args.data_dir,args.output_model_dir,args.output_model_type,args.icSHAPE_model_dir,args.train_set_file_name,args.valid_set_file_name,args.test_set_file_name]
+# args.TRAIN = string_to_bool(args.TRAIN)
+# args.EVALUATE = string_to_bool(args.EVALUATE)
+# args.PREDICT = string_to_bool(args.PREDICT)
 
-# [LEARNING_RATE,DECAY,MAX_EPOCHS,BATCH_SIZE,N_KERNELS_1,KERNEL_SIZE_1,DROP_OUT_CNN_1,N_KERNELS_2,KERNEL_SIZE_2,DROP_OUT_CNN_2,DENSE_FILTERS_1,LOSS,FINAL_ACTIVATION_FUNCTION,VERBOSE] = \
-#     [args.LEARNING_RATE,args.DECAY_RATE,args.MAX_EPOCHS,args.BATCH_SIZE,args.N_KERNELS_1,args.KERNEL_SIZE_1,args.DROP_OUT_CNN_1, \
-#      args.N_KERNELS_2,args.KERNEL_SIZE_2,args.DROP_OUT_CNN_2,args.DENSE_FILTERS_1,args.LOSS,args.FINAL_ACTIVATION_FUNCTION,args.VERBOSE]
+[args.TRAIN, args.EVALUATE, args.PREDICT] = string_to_bool([args.TRAIN, args.EVALUATE, args.PREDICT])
 
-args.TRAIN = string_to_bool(args.TRAIN)
-args.EVALUATE = string_to_bool(args.EVALUATE)
-args.PREDICT = string_to_bool(args.PREDICT)
+# for arg in args_bool:
+#     arg = string_to_bool(arg)
 
 #Replacing '\\' by '/'
 [args.input_data_dir,args.predict_data_path,args.output_data_dir,args.output_model_dir,args.icSHAPE_model_dir,args.predict_model_dir] = \
@@ -74,6 +72,8 @@ args.PREDICT = string_to_bool(args.PREDICT)
 
 length_of_seq=101
 input_Width = 5
+
+print('\nTRAIN:\t\t\t\t{} \nPREDICT:\t\t\t{} \nEVALUATE:\t\t\t{} \n'.format(args.TRAIN,args.PREDICT,args.EVALUATE))
 
 if args.TRAIN:
     print('\nInput data directory: \t\t{}\nOutput model directory: \t{}\nModel type: \t\t\t{}\nicSHAPE model directory: \t{}'\
@@ -86,7 +86,7 @@ if args.TRAIN:
 
     print('Protein: \t\t\t{}\nCell Type: \t\t\t{}'.format(Protein,Cell_Type))
 
-    if (Cell_Type != 'K562' ) or (Cell_Type != 'HepG2'):
+    if (Cell_Type != 'K562' ) and (Cell_Type != 'HepG2'):
         print('Error: Model training of CellRBP currently supports HepG2 and K562 cell types only')
         sys.exit()
 
@@ -100,7 +100,7 @@ if args.TRAIN:
         args.LOSS = tf.keras.losses.BinaryCrossentropy();
 
     print('Protein: \t\t\t\t{}\nCell Type: \t\t\t\t{}'.format(Protein,Cell_Type))
-    path_Model = args.output_model_dir + '/{}/{}/{}'.format(args.output_model_type,Protein,Cell_Type)
+    path_Model = args.output_model_dir + '{}/{}/{}'.format(args.output_model_type,Protein,Cell_Type)
     create_dir(path_Model)
 
     names = ['ENST_Indices','Sequence','SHAPE','eCLIP_Score','FPKM','ENST','ENST_Start','ENST_End','chr','chr_start','chr_end','strand','RNA_annotations']
@@ -184,43 +184,51 @@ if args.EVALUATE:
     if args.TRAIN:
         args.predict_model_dir = path_Model + '/'
     
-    print('\n------ Model evaluation ------')
+    print('\n------ Model evaluation ------\n')
     print('Predictive model: \t\t{}'.format(args.predict_model_dir))
     check_path(args.predict_model_dir)
     # if args.predict_model_dir == None:
     #     print('Error #3: Please provide a path for the predictive model. \nUtilize the --predict_model_dir to specify the directory of the predictive model')
     # else:
-    Protein_Cell_Type = (args.input_data_dir.split('/'))[-2]   
+    Protein_Cell_Type = (args.predict_data_path.split('/'))[-2]   
     Cell_Type = Protein_Cell_Type.split('_')[1]
     Protein = Protein_Cell_Type.split('_')[0]
     model_protein = args.predict_model_dir.split('/')[-3]
     model_cell_type = args.predict_model_dir.split('/')[-2]
     
-    print('Data Directory: \t\t{}'.format(args.input_data_dir))
+    # print('Data evaluate: \t\t{}'.format(args.predict_data_path))
     print('Data protein: \t\t\t{} \nData cell type: \t\t{}'.format(Protein,Cell_Type))
-    print('Data evaluated on: \t\t\t{}'.format(args.test_set_file_name))
+    print('Data evaluated on: \t\t{}'.format(args.predict_data_path))
     print('Model protein: \t\t\t{} \nModel cell type: \t\t{}'.format(model_protein,model_cell_type))
+    if (Cell_Type == model_cell_type):
+        print('Across cell type prediction: \tFalse\n')
+    else:
+        print('Across cell type prediction: \tTrue\n')
+        
     if model_protein != Protein:
         print('Error: The model\'s protein does not match the data\'s protein. \nExitting')
         sys.exit()
     if ((model_cell_type != 'K562') and (model_cell_type != 'HepG2')) and ((Cell_Type != 'K562') and (Cell_Type!='HepG2')):
         print('Error: Wrong Cell Type for the model and\or the input data. CellRBP currently supports only HepG2 and K562. \nExitting')
         sys.exit()
+    
 
-    df_eclip_test = pd.read_csv(args.input_data_dir + args.test_set_file_name, delimiter='\t')
+    
+    check_path(args.predict_data_path)
+    df_eclip_test = pd.read_csv(args.predict_data_path, delimiter='\t')
     x_test,y_test,fpkm_test,RNA_annotations_test,_,_ = preprocess(Protein,Cell_Type,df_eclip_test,args.icSHAPE_model_dir)
     loaded_model = load_model(args.predict_model_dir + '/Best_Model.h5')
     y_pred = loaded_model.predict([x_test, fpkm_test, RNA_annotations_test], verbose=0)
     
     score = metrics.roc_auc_score(y_test, y_pred)
     print('\n------ Evaluation results ------')
-    print("\nAUC: \t\t{}".format(score))
+    print("\nAUC: \t\t{}\n".format(score))
 
 if args.PREDICT:
     if args.TRAIN:
         args.predict_model_dir = path_Model + '/'
     
-    print('\n------ eCLIP scores prediction ------')
+    print('\n------ eCLIP scores prediction ------\n')
     print('Predictive model: \t\t{}'.format(args.predict_model_dir))
     check_path(args.predict_model_dir)
 
@@ -234,13 +242,21 @@ if args.PREDICT:
     print('Data to predict path: \t\t{}'.format(args.predict_data_path))
     print('Data protein: \t\t\t{} \nData cell type: \t\t{}'.format(Protein,Cell_Type))
     print('Model protein: \t\t\t{} \nModel cell type: \t\t{}'.format(model_protein,model_cell_type))
+    if (Cell_Type == model_cell_type):
+        print('Across cell type prediction: \tFalse\n')
+    else:
+        print('Across cell type prediction: \tTrue\n')
     print('Output path: \t\t{}'.format(csv_prediction_path))
+
+        
     if model_protein != Protein:
         print('Error: The model\'s protein does not match the data\'s protein. \nExitting')
         sys.exit()
     if ((model_cell_type != 'K562') and (model_cell_type != 'HepG2')) and ((Cell_Type != 'K562') and (Cell_Type!='HepG2')):
         print('Error: Wrong Cell Type for the model and\or the input data. CellRBP currently supports only HepG2 and K562. \nExitting')
         sys.exit()
+
+
 
     df_predict = pd.read_csv(args.predict_data_path, delimiter='\t')
     x_test,y_test,fpkm_test,RNA_annotations_test,_,_ = preprocess(Protein,Cell_Type,df_predict,args.icSHAPE_model_dir)

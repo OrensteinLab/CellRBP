@@ -8,7 +8,7 @@ Created on Thu Oct  7 10:40:02 2021
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import sklearn
+from sklearn import preprocessing
 
 import matplotlib.pyplot as plt
 import logomaker
@@ -27,13 +27,13 @@ def create_dir(path, silence=False):
     isExist = os.path.exists(path)
     if not isExist:
        os.makedirs(path)
-       if ~silence:
+       if silence == False:
            print("New Directory Created in {}".format(path)) 
 
 def check_path(path):
     isExist = os.path.exists(path)
     if not isExist:
-        print("Invalid path: {}.\nExitting".format(path)) 
+        print("\nError: path doesn\'t exist: {}.\nExitting".format(path)) 
         sys.exit()
         
 def fix_path(path_args):
@@ -53,17 +53,24 @@ def ETA(startTime,partDone,include_seconds = True):
     else:
         print('Time Elapsed: {}h {}m {}s --- ETA: {}h {}m {}s'.format(int(ElapsedTime//3600),int((ElapsedTime%3600)//60),int(ElapsedTime%60),int(TimeLeft//3600),int((TimeLeft%3600)//60),int(TimeLeft%60)))
         
-def string_to_bool(arg):
-    if arg == 'True':
-        arg_bool = True
-        return arg_bool
-
-    elif arg == 'False':
-        arg_bool = False
-        return arg_bool
-
-    else:
-        print('Error, input should be \'False\' or \'True\'')
+def string_to_bool(args):
+    #Convert a list of strings to list of booleans
+    args_bool = []
+    for arg in args:
+        if arg.lower() == 'true':
+            args_bool.append(True)
+            # arg_bool = True
+            # return arg_bool
+    
+        elif arg.lower() == 'false':
+            args_bool.append(False)
+            # arg_bool = False
+            # return arg_bool
+    
+        else:
+            print('Error, input should be \'False\' or \'True\'')
+        
+    return args_bool
         
 #%% Preprocessing functions
 def one_hot_encode_RNA(seq):
@@ -111,7 +118,7 @@ def preprocess(Protein,Cell_Type,df_eclip,SHAPE_model_dir):
     
     df_eclip_RNA_annotations_np = np.array(RNA_annotations_list)
         
-    label_binarizer = sklearn.preprocessing.LabelBinarizer()
+    label_binarizer = preprocessing.LabelBinarizer()
     label_binarizer.fit(RNA_annotations_unique_list)
     RNA_annotations_OHE = label_binarizer.transform(df_eclip_RNA_annotations_np)
     
@@ -200,6 +207,7 @@ def one_hot_encode_SHAPE(seq,output_type = int):
 #%% Interpretation functions
 def create_DNA_logo(PWM, Protein, Cell_Type, Title, path_plot, figsize=(16, 4), show_score = False, labelpad=-1, ax=None, show_only_y = False, show_Title = True):
     
+    
     fig, ax = plt.subplots(1, 1, figsize=figsize)
     if show_score == False:
         ax.axis('off')
@@ -227,9 +235,8 @@ def create_DNA_logo(PWM, Protein, Cell_Type, Title, path_plot, figsize=(16, 4), 
         plt.savefig(path_plot+'{}.png'.format(Protein),bbox_inches='tight', dpi = 100)
     else:
         plt.savefig(path_plot+'{}_{}.png'.format(Protein,Cell_Type),bbox_inches='tight', dpi = 100)
-    plt.show()
+    plt.close(fig)
 
-    return IG_logo  
 
 def create_structure_logo(PWM, Protein, Cell_Type, Title, path_plot, figsize=(16, 3),show_score = False, labelpad=-1, ax=None, show_only_y = False):
     PWM_df = pd.DataFrame(PWM, columns=['P', 'U'])
@@ -261,9 +268,8 @@ def create_structure_logo(PWM, Protein, Cell_Type, Title, path_plot, figsize=(16
         plt.savefig(path_plot+'{}.png'.format(Protein),bbox_inches='tight', dpi = 100)
     else:
         plt.savefig(path_plot+'{}_{}.png'.format(Protein,Cell_Type),bbox_inches='tight', dpi = 100)
-    plt.show()
+    plt.close(fig)
 
-    return IG_logo  
 
 def create_SHAPE_plot(SHAPE_data, Protein, Cell_Type, path_plot, figsize=(16, 3),show_icSHAPE_median_line = False,show_score = False, show_only_y = False):
     fig, ax = plt.subplots(1, 1, figsize=figsize)
@@ -288,7 +294,7 @@ def create_SHAPE_plot(SHAPE_data, Protein, Cell_Type, path_plot, figsize=(16, 3)
 
     create_dir(path_plot,silence=True)
     plt.savefig(path_plot+'{}_{}.png'.format(Protein,Cell_Type),bbox_inches='tight', dpi=100)
-    plt.show()
+    plt.close(fig)
     
 def get_gradients(model, sample_inputs, target_range=None, jacobian=False):
     """Computes the gradients of outputs w.r.t input.
