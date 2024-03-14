@@ -1,14 +1,17 @@
 # CellRBP
 
+## CellRBP Framework
+
+CellRBP is based on a CNN that uniquely receives as input cell-type-specific information, such as experimentally measured RNA structure and RNA abundance, which enable the accurate
+generalization across cell types. The model is then capable of predicting new binding sites on provided RNA sequences, as well as interpreting and visualizing various RNA-binding preferences.
+
+<img src="docs/Model_CellRBP.png" alt="CellRBP framework overview"
+	title="Model_CellRBP framework overview" width="550" />
+	
 ## Requirements
 
-Python 3.9.15
-TensorFlow version: 2.11.0
-Pandas version: 1.5.2
-NumPy version: 1.24.1
-Matplotlib 3.6.3
-Scikit-learn 1.2.0
-logomaker
+- Python 3.9.15
+- pip (requirements file)
 
 ## Installation
 
@@ -26,7 +29,7 @@ tar zxvf ./Features/GTF/Homo_sapiens.GRCh38.89.gtf.gz
 ## Preprocess eCLIP data 
 
 Add RNA abundance, RNA region types and predict missing icSHAPE values
-(in this example: preprocess 2 eCLIIP datasets - AGGF1-HepG2, AGGF1-K562)
+(in this example: preprocess 2 eCLIP datasets - AGGF1-HepG2, AGGF1-K562)
 ```
 python Scripts/Process_Data.py --process_eclip True --input_data_path Data/clip_data/AGGF1_HepG2.tsv
 python Scripts/Process_Data.py --process_eclip True --input_data_path Data/clip_data/AGGF1_K562.tsv
@@ -67,7 +70,7 @@ python Scripts/Model_Functions.py --EVALUATE True --predict_data_path Data/clip_
 
 ## Interpretation
 
-###Local sequence and structure interpretation 
+### Local sequence and structure interpretation 
 Retrieve sequence and structure local attribution scores for given samples
 (in this example: get local interpretation for AGGF1-HepG2)
 ```
