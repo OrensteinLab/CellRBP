@@ -5,8 +5,8 @@
 CellRBP is based on a CNN that uniquely receives as input cell-type-specific information, such as experimentally measured RNA structure and RNA abundance, which enable the accurate
 generalization across cell types. The model is then capable of predicting new binding sites on provided RNA sequences, as well as interpreting and visualizing various RNA-binding preferences.
 
-<img src="docs/Model_CellRBP.png" alt="CellRBP framework overview"
-	title="Model_CellRBP framework overview" width="550" />
+<img src="Docs/Model_CellRBP.png" alt="CellRBP framework overview"
+	title="CellRBP framework overview" width="550" />
 	
 ## Requirements
 
