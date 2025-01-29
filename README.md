@@ -22,8 +22,8 @@ pip install -r requirements.txt
 
 cd CellRBP
 git clone https://github.com/OrensteinLab/CellRBP.git
-tar zxvf ./Features/df_transcripts.pkl.gz
-tar zxvf ./Features/GTF/Homo_sapiens.GRCh38.89.gtf.gz
+gunzip ./Features/df_transcripts.pkl.gz
+gunzip ./Features/GTF/Homo_sapiens.GRCh38.89.gtf.gz
 ```
 
 ## Preprocess eCLIP data 
